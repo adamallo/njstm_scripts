@@ -16,6 +16,13 @@ def remove_taxa_prov(nodelist,prov_removal):
 		if random.random()<= prov_removal:
 			 discarded.append(node.taxon) 
 	return discarded
+
+def remove_taxa_tagprobs(nodelist,prob_dict):
+	discarded=list()
+	for node in nodelist:
+		assert prob_dict{node.label}, "Pobability not found!\n"
+		if random.random()<= prob_dict{node.label}:
+			discarded.append(node.taxon)
 ### Main ###
 
 ### Argparse
@@ -23,8 +30,10 @@ parser = argparse.ArgumentParser(description="Generates missing data removing ge
 parser.add_argument("sd",type=str,help="Main simphy output directory",metavar="inputdir")
 parser.add_argument("pr",type=float,help="Missing data probability",metavar="probability")
 parser.add_argument("o",type=str,help="Output file name",metavar="outname")
-parser.add_argument("-mk",type=str,default="random",help="Missing data generation scheme",choices=["random","2sp","bygene"],metavar="data_scheme")
-parser.add_argument("-a",type=float,help="Alpha parameter for the by-gene gamma distribution, only used if -mk bygene",metavar="alpha",default=1)
+parser.add_argument("-mk",type=str,default="random",help="Missing data generation scheme",choices=["random","byindividual","bygene"],metavar="data_scheme")
+parser.add_argument("-ist",type=float,help="Standard deviation for the truncated normal distribution with mean p to sample by-individual missing probabilities, only used if -mk byindividual",metavar="standardeviation",default=1)
+parser.add_argument("-itmin",type=float,help="Minimum value to truncate the normal distribution to sample by-individual missing probabilities, only used if -mk byindividual",metavar="truncmin",default=None)
+parser.add_argument("-itmax",type=float,help="Maximum value to truncate the normal distribution to sample by-individual missing probabilities,, only used if -mk byindividual",metavar="standardeviation",default=None)
 parser.add_argument("-s",type=int,help="Random number generator seed",metavar="seed")
 args = parser.parse_args()
 
@@ -67,6 +76,20 @@ for folder in folders:
 				gene_trees.append(gtree)
 			else:	#The whole tree is missing
 				continue
+	elif args.mk=="byindividual":
+		tag.probs=None
+		for gtree in tree_yielder:
+                        onodes=gtree.leaf_nodes()
+			if !tab.probs:
+				probs=truncated_normal(n=len(onodes),mean=args.p,sd=args.ist,min=args.itmin,max=args.itmax) #one prob for each leaf
+				for leafi in xrange(len(onodes)):
+					tab.probs{onodes[leafi].label}=probs[leafi]#assigment to leaf labels in the dictionary
+                        nodes=remove_taxa_tagprobs(onodes,tab.probs)
+			if len(nodes) < len(onodes)-1: #Tree with missing leaves
+                                gtree.prune_taxa(nodes,update_bipartitions=False, suppress_unifurcations=True)
+                                gene_trees.append(gtree)
+                        else:   #The whole tree is missing
+                                continue
 	else:
 		print("Yet unsupported option")
 	#Write gene trees

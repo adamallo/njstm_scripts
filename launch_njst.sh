@@ -42,7 +42,18 @@ for i in *.tree
 do
 	file=$(basename $i .tree)
 	cat $i |sed -e "s/:[^),]*//g" -e "s/)[0-9.]*//g" -e "s/[(,);]/ /g" -e 's/ /\'$'\n''/g' |sort|uniq|tail -n+2|sed "s/\(.*\)\_.*\_.*$/& \1/" > ${file}.mapping
-	Rscript $BIN/njstm.r $i ${file}.mapping liu ${file}.lnjst
-	Rscript $BIN/njstm.r $i ${file}.mapping original ${file}.onjst
-	Rscript $BIN/njstm.r $i ${file}.mapping unweighted ${file}.unjst
+	if [[ ! -f ${file}.lnjst ]]
+	then
+
+		Rscript $BIN/njstm.r $i ${file}.mapping liu ${file}.lnjst
+	fi
+	if [[ ! -f ${file}.onjst ]]
+	then
+
+		Rscript $BIN/njstm.r $i ${file}.mapping original ${file}.onjst
+	fi
+	if [[ ! -f ${file}.unjst ]]
+	then 
+		Rscript $BIN/njstm.r $i ${file}.mapping unweighted ${file}.unjst
+	fi
 done

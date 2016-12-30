@@ -22,9 +22,12 @@ do
 	then
 		for treefile in $i/${regexp}
 		do
-			cat $treefile | sed -e "s/^\[\&R\] //g" -e "s/'//g" > ${treefile}.temp
-			mv $treefile ${treefile}.bkp
-			mv ${treefile}.temp $treefile
+			if [[ ! -f ${treefile}.bkp ]]
+			then
+				cat $treefile | sed -e "s/^\[\&R\] //g" -e "s/'//g" > ${treefile}.temp
+				mv $treefile ${treefile}.bkp
+				mv ${treefile}.temp $treefile
+			fi
 		done
 	fi
 done
