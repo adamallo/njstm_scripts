@@ -8,6 +8,9 @@ import argparse
 from os import walk
 import glob
 import random
+#from scipy.stats import truncnorm
+from numpy.random import normal
+from joblib import Parallel, delayed
 
 ### My functions ###
 def remove_taxa_prov(nodelist,prov_removal):
@@ -20,9 +23,34 @@ def remove_taxa_prov(nodelist,prov_removal):
 def remove_taxa_tagprobs(nodelist,prob_dict):
 	discarded=list()
 	for node in nodelist:
-		assert prob_dict{node.label}, "Pobability not found!\n"
-		if random.random()<= prob_dict{node.label}:
+		assert prob_dict[node.taxon.label], "Pobability not found!\n"
+		if random.random()<= prob_dict[node.taxon.label]:
 			discarded.append(node.taxon)
+	return discarded
+
+def truncated_normal(n,mean,sd,min=None,max=None):
+#	if (min is not None) and (max is not None):
+#		return [truncnorm((min-mean)/sd, (max-mean)/sd) for i in xrange(n)]
+#	else:
+		maxit=1000000
+		rnumbers=list()
+  		i=0
+		it=0
+  		while (i<n):
+			assert it<=maxit, "Maximum iteration sampling the truncated normal reached\n"
+    			accept=0
+    			r=normal(mean,sd)
+    			if (min is None) or (min <= r):
+      				accept+=1
+    			if (max is None) or (max >= r):
+      				accept+=1
+    			if accept == 2:
+      				rnumbers.append(r)
+      				i+=1
+			it+=1
+		return rnumbers
+
+
 ### Main ###
 
 ### Argparse
@@ -30,10 +58,10 @@ parser = argparse.ArgumentParser(description="Generates missing data removing ge
 parser.add_argument("sd",type=str,help="Main simphy output directory",metavar="inputdir")
 parser.add_argument("pr",type=float,help="Missing data probability",metavar="probability")
 parser.add_argument("o",type=str,help="Output file name",metavar="outname")
-parser.add_argument("-mk",type=str,default="random",help="Missing data generation scheme",choices=["random","byindividual","bygene"],metavar="data_scheme")
+parser.add_argument("-mk",type=str,default="random",help="Missing data generation scheme. Implemented schemes: random and byindividual",choices=["random","byindividual","bygene"],metavar="data_scheme")
 parser.add_argument("-ist",type=float,help="Standard deviation for the truncated normal distribution with mean p to sample by-individual missing probabilities, only used if -mk byindividual",metavar="standardeviation",default=1)
 parser.add_argument("-itmin",type=float,help="Minimum value to truncate the normal distribution to sample by-individual missing probabilities, only used if -mk byindividual",metavar="truncmin",default=None)
-parser.add_argument("-itmax",type=float,help="Maximum value to truncate the normal distribution to sample by-individual missing probabilities,, only used if -mk byindividual",metavar="standardeviation",default=None)
+parser.add_argument("-itmax",type=float,help="Maximum value to truncate the normal distribution to sample by-individual missing probabilities,, only used if -mk byindividual",metavar="truncmax",default=None)
 parser.add_argument("-s",type=int,help="Random number generator seed",metavar="seed")
 args = parser.parse_args()
 
@@ -77,14 +105,15 @@ for folder in folders:
 			else:	#The whole tree is missing
 				continue
 	elif args.mk=="byindividual":
-		tag.probs=None
+		tagProbs=None
 		for gtree in tree_yielder:
                         onodes=gtree.leaf_nodes()
-			if !tab.probs:
-				probs=truncated_normal(n=len(onodes),mean=args.p,sd=args.ist,min=args.itmin,max=args.itmax) #one prob for each leaf
+			if not tagProbs:
+				tagProbs={}
+				probs=truncated_normal(n=len(onodes),mean=args.pr,sd=args.ist,min=args.itmin,max=args.itmax) #one prob for each leaf
 				for leafi in xrange(len(onodes)):
-					tab.probs{onodes[leafi].label}=probs[leafi]#assigment to leaf labels in the dictionary
-                        nodes=remove_taxa_tagprobs(onodes,tab.probs)
+					tagProbs[onodes[leafi].taxon.label]=probs[leafi]#assigment to leaf labels in the dictionary
+                        nodes=remove_taxa_tagprobs(onodes,tagProbs)
 			if len(nodes) < len(onodes)-1: #Tree with missing leaves
                                 gtree.prune_taxa(nodes,update_bipartitions=False, suppress_unifurcations=True)
                                 gene_trees.append(gtree)
