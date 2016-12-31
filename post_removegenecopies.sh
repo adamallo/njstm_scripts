@@ -8,7 +8,7 @@
 
 if [[ $# -ne 2 ]] || [[ ! -d $1 ]]
 then
-        echo "USAGE: $0 dir regexp"
+	echo "USAGE: $0 dir \"regexp\""
 	echo "Regexp indicates the files to adapt after the leaf subsampling. For example: r*.tree"
         exit
 fi

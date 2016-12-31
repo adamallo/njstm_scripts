@@ -7,28 +7,30 @@ import sys
 import argparse
 from os import walk
 import glob
-import random
 #from scipy.stats import truncnorm
+import numpy
 from numpy.random import normal
 from joblib import Parallel, delayed
 
 ### My functions ###
-def remove_taxa_prov(nodelist,prov_removal):
+def remove_taxa_prov(r,nodelist,prov_removal):
 	discarded=list()
-	for node in nodelist:
-		if random.random()<= prov_removal:
-			 discarded.append(node.taxon) 
+	rs=r.random_sample(len(nodelist))
+	for i in xrange(len(nodelist)):
+		if rs[i]<= prov_removal:
+			 discarded.append(nodelist[i].taxon) 
 	return discarded
 
-def remove_taxa_tagprobs(nodelist,prob_dict):
+def remove_taxa_tagprobs(r,nodelist,prob_dict):
 	discarded=list()
-	for node in nodelist:
-		assert prob_dict[node.taxon.label], "Pobability not found!\n"
-		if random.random()<= prob_dict[node.taxon.label]:
-			discarded.append(node.taxon)
+	rs=r.random_sample(len(nodelist))
+	for i in xrange(len(nodelist)):
+		assert prob_dict[nodelist[i].taxon.label], "Pobability not found!\n"
+		if rs[i]<= prob_dict[nodelist[i].taxon.label]:
+			discarded.append(nodelist[i].taxon)
 	return discarded
 
-def truncated_normal(n,mean,sd,min=None,max=None):
+def truncated_normal(r,n,mean,sd,min=None,max=None):
 #	if (min is not None) and (max is not None):
 #		return [truncnorm((min-mean)/sd, (max-mean)/sd) for i in xrange(n)]
 #	else:
@@ -39,13 +41,13 @@ def truncated_normal(n,mean,sd,min=None,max=None):
   		while (i<n):
 			assert it<=maxit, "Maximum iteration sampling the truncated normal reached\n"
     			accept=0
-    			r=normal(mean,sd)
-    			if (min is None) or (min <= r):
+    			rnum=r.normal(mean,sd)
+    			if (min is None) or (min <= rnum):
       				accept+=1
-    			if (max is None) or (max >= r):
+    			if (max is None) or (max >= rnum):
       				accept+=1
     			if accept == 2:
-      				rnumbers.append(r)
+      				rnumbers.append(rnum)
       				i+=1
 			it+=1
 		return rnumbers
@@ -63,15 +65,16 @@ parser.add_argument("-ist",type=float,help="Standard deviation for the truncated
 parser.add_argument("-itmin",type=float,help="Minimum value to truncate the normal distribution to sample by-individual missing probabilities, only used if -mk byindividual",metavar="truncmin",default=None)
 parser.add_argument("-itmax",type=float,help="Maximum value to truncate the normal distribution to sample by-individual missing probabilities,, only used if -mk byindividual",metavar="truncmax",default=None)
 parser.add_argument("-s",type=int,help="Random number generator seed",metavar="seed")
+parser.add_argument("-ncores",type=int,help="Number of cores")
 args = parser.parse_args()
 
 ###Random number machinery initialization
 if args.s:
 	seed=args.s
 else:
-	seed=random.randint(0,sys.maxint)
+	seed=numpy.random.randint()
 
-random.seed(seed)
+numpy.random.seed(seed)
 print("Seed: %d" % seed)
 
 ###Some variables to recycle
@@ -84,11 +87,13 @@ for (dirpath, dirnames, filenames) in walk(args.sd):
         folders.extend(dirnames)
         break
 
+if len(folders) == 0:
+	raise NameError("0 Detected folders")
+
 ###For each replicate
-for folder in folders:
-	#Get gene trees	
-#	for treefile in glob.glob(args.sd+"/"+folder+"/g_trees*.trees"):
-#		gene_trees.append(Tree.get(path=treefile,schema="newick",rooting="default-rooted",preserve_underscores=True))
+def main (folder=None,seed=None):
+	print("Folder %s, seed %s") % (folder,seed)
+	r=numpy.random.RandomState(seed)
 	gene_trees=TreeList()
 	taxa = dendropy.TaxonNamespace()
 	treefiles=glob.glob(args.sd+"/"+folder+"/g_trees*.trees")
@@ -98,7 +103,7 @@ for folder in folders:
 	if args.mk=="random":
 		for gtree in tree_yielder:
 			onodes=gtree.leaf_nodes()
-			nodes=remove_taxa_prov(onodes,args.pr)
+			nodes=remove_taxa_prov(r,onodes,args.pr)
 			if len(nodes) < len(onodes)-1: #Tree with missing leaves
 				gtree.prune_taxa(nodes,update_bipartitions=False, suppress_unifurcations=True)
 				gene_trees.append(gtree)
@@ -110,10 +115,10 @@ for folder in folders:
                         onodes=gtree.leaf_nodes()
 			if not tagProbs:
 				tagProbs={}
-				probs=truncated_normal(n=len(onodes),mean=args.pr,sd=args.ist,min=args.itmin,max=args.itmax) #one prob for each leaf
+				probs=truncated_normal(r,n=len(onodes),mean=args.pr,sd=args.ist,min=args.itmin,max=args.itmax) #one prob for each leaf
 				for leafi in xrange(len(onodes)):
 					tagProbs[onodes[leafi].taxon.label]=probs[leafi]#assigment to leaf labels in the dictionary
-                        nodes=remove_taxa_tagprobs(onodes,tagProbs)
+                        nodes=remove_taxa_tagprobs(r,onodes,tagProbs)
 			if len(nodes) < len(onodes)-1: #Tree with missing leaves
                                 gtree.prune_taxa(nodes,update_bipartitions=False, suppress_unifurcations=True)
                                 gene_trees.append(gtree)
@@ -123,4 +128,12 @@ for folder in folders:
 		print("Yet unsupported option")
 	#Write gene trees
 	gene_trees.write(path=args.sd+"/"+folder+"/"+args.o,schema="newick")
+
+seeds= numpy.random.randint(numpy.iinfo(numpy.int32).max,size=len(folders))
+
+if args.ncores > 1:
+	Parallel(n_jobs=args.ncores) (delayed(main)(folder=folders[i],seed=seeds[i]) for i in xrange(len(folders)))
+else:
+	[main(folder=folders[i],seed=seeds[i]) for i in xrange(len(folders))]
+
 print("Done!")
