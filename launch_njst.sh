@@ -38,9 +38,9 @@ else
 fi
 
 cd $dir/$id
-for i in *.tree
+for i in $(find . -regex ".*\/r.*\.tree[0-9]*")
 do
-	file=$(basename $i .tree)
+	file=$(echo $i | sed -e "s/\.\/\(.*\)\.tree\(.*\)/\1.\2/g" -e "s/\.$//")
 	cat $i |sed -e "s/:[^),]*//g" -e "s/)[0-9.]*//g" -e "s/[(,);]/ /g" -e 's/ /\'$'\n''/g' |sort|uniq|tail -n+2|sed "s/\(.*\)\_.*\_.*$/& \1/" > ${file}.mapping
 	if [[ ! -f ${file}.lnjst ]]
 	then

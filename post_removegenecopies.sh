@@ -14,13 +14,13 @@ then
 fi
 
 dir=$1
-regexp=$2
+regex=$2
 
 for i in $dir/*
 do
 	if [[ -d $i ]]
 	then
-		for treefile in $i/${regexp}
+		for treefile in $(find $i -regex "$regex")
 		do
 			if [[ ! -f ${treefile}.bkp ]]
 			then
