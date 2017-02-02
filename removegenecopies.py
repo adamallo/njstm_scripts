@@ -104,10 +104,10 @@ def main (folder=None,seed=None):
 		for gtree in tree_yielder:
 			onodes=gtree.leaf_nodes()
 			nodes=remove_taxa_prov(r,onodes,args.pr)
-			if len(nodes) < len(onodes)-1: #Tree with missing leaves
+			if len(nodes) < len(onodes)-3: #Tree with missing leaves
 				gtree.prune_taxa(nodes,update_bipartitions=False, suppress_unifurcations=True)
 				gene_trees.append(gtree)
-			else:	#The whole tree is missing
+			else:	#The whole tree is missing (the tree would have 3 leaves or less, which is not an unrooted tree)
 				continue
 	elif args.mk=="byindividual":
 		tagProbs=None
@@ -119,10 +119,10 @@ def main (folder=None,seed=None):
 				for leafi in xrange(len(onodes)):
 					tagProbs[onodes[leafi].taxon.label]=probs[leafi]#assigment to leaf labels in the dictionary
                         nodes=remove_taxa_tagprobs(r,onodes,tagProbs)
-			if len(nodes) < len(onodes)-1: #Tree with missing leaves
+			if len(nodes) < len(onodes)-3: #Tree with missing leaves
                                 gtree.prune_taxa(nodes,update_bipartitions=False, suppress_unifurcations=True)
                                 gene_trees.append(gtree)
-                        else:   #The whole tree is missing
+                        else:   #The whole tree is missing (the tree would have 3 leaves or less, which is not an unrooted tree)
                                 continue
 	else:
 		print("Yet unsupported option")
