@@ -26,7 +26,7 @@ fi
 dir=$1
 
 module load R/3.2.2_1
-id=$(printf "%06d" $id)
+id=$(printf "%05d" $id)
 
 if [[ ! -d $dir/$id ]]
 then

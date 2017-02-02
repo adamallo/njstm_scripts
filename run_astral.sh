@@ -5,8 +5,8 @@
 #$ -v LD_LIBRARY_PATH
 #$ -v PATH
 
-H=/home/dmallo/njstM/data/sim1/
-nDigits=6
+H=/home/dmallo/njstM/data/broadsims/
+nDigits=5
 
 if [ "$SGE_TASK_ID" == "" ] || [ "$SGE_TASK_ID" == "undefined" ]
 then
