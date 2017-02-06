@@ -6,7 +6,7 @@
 #$ -v PATH
 
 module load python/2.7.8
-
+H=/home/dmallo/njstM/data/broadsims/
 BIN=/home/dmallo/njstM/scripts/
 
 ASTRID="python /home/dmallo/astridm/ASTRID"
