@@ -18,8 +18,10 @@ parser.add_argument("-o",required=True,type=str,help="Output file name")
 args = parser.parse_args()
 
 ###Main
-tree_yielder=Tree.yield_from_files(files=[args.i],schema="newick",rooting="default-rooted",preserve_underscores=True)
-for tree in tree_yielder:
+itrees=TreeList.get(path=args.i,schema="newick",rooting="default-rooted",preserve_underscores=True)
+otrees=TreeList()
+for tree in itrees:
     tree.collapse_basal_bifurcation()
-    tree.write(path=args.o,schema="newick",unquoted_underscores=True,suppress_rooting=True)
+    otrees.append(tree)
+otrees.write(path=args.o,schema="newick",unquoted_underscores=True,suppress_rooting=True)
 print("Done!")
