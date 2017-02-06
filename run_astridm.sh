@@ -37,7 +37,7 @@ do
 		method=astridmo
 		/usr/bin/time -a -o ${file}.${method}.time $ASTRID -i ${i}_basaltrifurcation --map ${file}.astrid.mapping -c ${file}.${method}.cache -o ${file}.${method} 1> ${file}.${method}.out 2>${file}.${method}.err
         fi
-	if [[ ! -f ${file}astridmu ]]
+	if [[ ! -f ${file}.astridmu ]]
 	then
 		method=astridmu
 		/usr/bin/time -a -o ${file}.${method}.time $ASTRID -i ${i}_basaltrifurcation --map ${file}.astrid.mapping -c ${file}.${method}.cache --bygene -o ${file}.${method} 1> ${file}.${method}.out 2>${file}.${method}.err
