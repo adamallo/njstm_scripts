@@ -22,6 +22,12 @@ method=astral
 cd $H/$id
 
 for i in $(find . -regex ".*\/.*\.tree[0-9]*")
+#Removing weird errors
+#rm -f original_g_trees.tree
+#rm -f g_trees*.time
+#cat g_trees* >> original_g_trees.tree
+#done
+#for i in $(find . -regex ".*\/original.*.tree")
 do
 	file=$(echo $i | sed -e "s/\.\/\(.*\)\.tree\(.*\)/\1.\2/g" -e "s/\.$//")
 	leaves=($(cat $i |sed -e "s/:[^),]*//g" -e "s/)[0-9.]*//g" -e "s/[(,);]/ /g" -e 's/ /\'$'\n''/g' |sort|uniq|tail -n+2))

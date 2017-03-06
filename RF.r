@@ -16,7 +16,7 @@ for (i in 1:length(dirs)){
 	rep=as.numeric(basename(dir))
 	s_tree=read.tree(paste0(dir,"/s_tree.trees"))
 	labels_original=sort(s_tree$tip.label)
-	methods=c("lnjst","onjst","unjst","astral")
+	methods=c("lnjst","onjst","unjst","astral","astridmo","astridmu","astriddef")
 	options(stringsAsFactors=FALSE)
 	for (m in 1:length(methods))
 	{
